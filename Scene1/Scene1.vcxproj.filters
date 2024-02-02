@@ -21,9 +21,12 @@
     <ClCompile Include="source.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GLFWHandler.h">
+    <ClInclude Include="Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

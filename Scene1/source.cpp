@@ -3,8 +3,8 @@
 
 #include <iostream>
 
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
+int SCREEN_WIDTH = 800;
+int SCREEN_HEIGHT = 600;
 
 void framebuffer_resize_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
@@ -25,7 +25,15 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Title", NULL, NULL);
+
+	//glfwWindowHint(GLFW_DECORATED, NULL);
+	
+	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+	SCREEN_WIDTH = mode->width;
+	SCREEN_HEIGHT = mode->height;
+
+	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Scene", monitor, NULL);
 	if (!window) {
 		std::cerr << "Failed to create GLFW window" << std::endl;
 		return -1;
