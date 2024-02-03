@@ -10,22 +10,27 @@
 #include <iostream>
 
 class Shader {
+private:
+	// SHADER ID
 	unsigned int ID = 0;
-	
+
 	unsigned int createShader(const std::string& shaderSource, char type);
-	void checkErrors(unsigned int shaderID, char type);
+	void checkShaderCompilationErrors(unsigned int shaderID);
+	void checkProgramLinkingErrors();
 public:
-	Shader(const std::string& vertexShaderSource, const std::string& fragmentShaderSource, bool pathProvided);
+	// constructor
+	Shader(const std::string& vertexShader, const std::string& fragmentShader, bool filePathProvided = true);
 
-	unsigned int getID();
-	
+	// use shaderprogram
 	void use();
+	// delete shaderprogram
 	void del();
+	// get shader id
+	unsigned int getID();
 
-	void setUniformInt(std::string& name, int value);
-	void setUniformBool(std::string& name, bool value);
-	void setUniformFloat(std::string& name, float value);
-
-	void setUniform4fMatrix(std::string& name, glm::mat4 matrix);
-	
+	// set uniform values
+	void setBoolUniform(const std::string& name, bool value) const;
+	void setIntUniform(const std::string& name, int value) const;
+	void setFloatUniform(const std::string& name, float value) const;
+	void setUniformMatrix4float(const std::string& name, glm::mat4& transform);
 };
