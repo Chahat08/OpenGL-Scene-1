@@ -1,14 +1,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 #include <iostream>
 #include <random>
 #include <vector>
 
 #include "Shader.h"
+#include "Texture.h"
 #include "VertexData.h"
 #include "Constants.h"
 
@@ -163,46 +161,16 @@ int main() {
 	Shader shader("shaders/vertexShaderSource.vert", "shaders/fragmentShaderSource.frag");
 
 	// TEXTURES
-	unsigned int textures[2];
-	glGenTextures(2, textures);
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	Texture texture0("textures/purple_stars.jpg", "jpg", false);
+	texture0.setTextureParams(GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	Texture texture1("textures/green_lines.jpg", "jpg", false);
+	texture1.setTextureParams(GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
 
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load("textures/purple_stars.jpg", &width, &height, &nrChannels, 0);
+	shader.use();
+	shader.setIntUniform("purpleStars", 0);
+	shader.setIntUniform("greenLines", 1);
 
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else std::cerr << "Failed to load texture " << std::endl;
-
-	glBindTexture(GL_TEXTURE_2D, textures[1]);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	data = stbi_load("textures/green_lines.jpg", &width, &height, &nrChannels, 0);
-
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else std::cerr << "Failed to load texture " << std::endl;
-
-
-	stbi_image_free(data);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, textures[1]);
 
 	// VERTEX DATA
 	unsigned int VBO, VAO;
@@ -241,10 +209,6 @@ int main() {
 		axes.push_back(glm::vec3(distribution_axes(engine), distribution_axes(engine), distribution_axes(engine)));
 	}
 
-	shader.use(); // don't forget to activate the shader before setting uniforms!  
-	glUniform1i(glGetUniformLocation(shader.getID(), "purpleStars"), 0); // set it manually
-	shader.setIntUniform("greenLines", 1);
-
 	int frame = 0;
 	float lastTime = glfwGetTime();
 	while (!glfwWindowShouldClose(window)) {
@@ -252,6 +216,9 @@ int main() {
 
 		glClearColor(0.0f, 0.027f, 0.212f, 0.1f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		texture0.setTextureUnit(0);
+		texture1.setTextureUnit(1);
 
 		shader.use();
 		glBindVertexArray(VAO);
