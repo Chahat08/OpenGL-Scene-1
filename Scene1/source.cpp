@@ -20,6 +20,19 @@ int NUM_CUBES = 16;
 
 const float IPD = 0.5f;
 
+float camX = 0.0f;
+//glm::vec3 cameraPos = glm::vec3((rightEye ? camX += ipd / 2.0 : camX -= ipd / 2.0), 0.0, 0.0);
+glm::vec3 cameraPos = glm::vec3(0.0, 0.0, 0.0);
+glm::vec3 cameraTarget = glm::vec3(0.0, 0.0, -1.0);
+glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
+
+float deltaTime;
+
+float yaw = 0.0f;
+float pitch = 90.0f;
+
+float fov = 45.0f;
+
 void framebuffer_resize_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
@@ -31,14 +44,43 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+
 	if (CURSOR_XPOS == INT_MIN) {
 		// set initial values
 		CURSOR_XPOS = xpos;
 		CURSOR_YPOS = ypos;
 	}
 
-	if (CURSOR_XPOS != xpos || CURSOR_YPOS != ypos)
-		glfwSetWindowShouldClose(window, GL_TRUE);
+	float xoffset = xpos - CURSOR_XPOS;
+	float yoffset = CURSOR_YPOS - ypos;
+
+	CURSOR_XPOS = xpos;
+	CURSOR_YPOS = ypos;
+
+	const float sensitivity = 0.05f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 89.0f) pitch = 89.0f;
+	if (pitch < -89.0f) pitch = -89.0f;
+
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraTarget = glm::normalize(direction);
+
+	//if (CURSOR_XPOS != xpos || CURSOR_YPOS != ypos)
+	//	glfwSetWindowShouldClose(window, GL_TRUE);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	fov -= float(yoffset);
+	if (fov < 1.0) fov = 1.0f;
+	else if (fov > 45.0f) fov = 45.0f;
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -50,6 +92,27 @@ void processInput(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 	}
+
+	// camera movement
+	float cameraSpeed = 10.0*deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
+		cameraPos += cameraSpeed * cameraTarget;
+	
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraTarget;
+
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		cameraPos += glm::normalize(glm::cross(cameraTarget, cameraUp)) * cameraSpeed;
+
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+		cameraPos -= glm::normalize(glm::cross(cameraTarget, cameraUp)) * cameraSpeed;
+
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		cameraPos += cameraSpeed * cameraUp;
+
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraUp;
+	
 }
 
 void createModelMatrices(Shader& shader, std::vector<glm::vec3> positions, std::vector<glm::vec3> axes) {
@@ -64,7 +127,7 @@ void createModelMatrices(Shader& shader, std::vector<glm::vec3> positions, std::
 }
 
 void createViewMatrix(Shader& shader, float ipd, bool rightEye = false) {
-	const float radius = 10.0f;
+	/*const float radius = 10.0f;
 	float camX = sin(glfwGetTime()) * radius;
 	float camZ = cos(glfwGetTime()) * radius;
 	glm::mat4 view(1.0f);
@@ -72,15 +135,18 @@ void createViewMatrix(Shader& shader, float ipd, bool rightEye = false) {
 		glm::vec3((rightEye ? camX += ipd / 2.0 : camX -= ipd / 2.0), 0.0f, camZ),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f)
-	);
+	);*/
+
+	glm::mat4 view = glm::lookAt(cameraPos, cameraTarget+cameraPos, cameraUp);
+
 	shader.setUniformMatrix4float("view", view);
 }
 
-void createProjectionMatrix(Shader& shader, float near = 0.1f, float far = 100.0f, float fovDeg = 45.0f) {
+void createProjectionMatrix(Shader& shader, float near = 0.1f, float far = 100.0f) {
 	glm::mat4 projection(1.0f);
 
 	projection = glm::perspective(
-		glm::radians(45.0f),
+		glm::radians(fov),
 		(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,
 		0.1f,
 		100.0f
@@ -90,7 +156,7 @@ void createProjectionMatrix(Shader& shader, float near = 0.1f, float far = 100.0
 }
 
 void createAllTransformationsAndEnableQuadBuffer(Shader& shader, float ipd, float near, float far, float fovDeg, std::vector<glm::vec3> positions, std::vector<glm::vec3> axes) {
-	createProjectionMatrix(shader, near, far, fovDeg);
+	createProjectionMatrix(shader, near, far);
 
 	// LEFT EYE
 	glDrawBuffer(GL_BACK_LEFT);
@@ -139,7 +205,7 @@ int main() {
 	}
 
 	glfwMakeContextCurrent(window);
-	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); // hide the cursor
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); // hide the cursor
 
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -154,8 +220,9 @@ int main() {
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_resize_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
-	//glfwSetCursorPosCallback(window, cursor_position_callback);
-	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, cursor_position_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+	//glfwSetKeyCallback(window, key_callback);
 
 	// SHADERS
 	Shader shader("shaders/vertexShaderSource.vert", "shaders/fragmentShaderSource.frag");
@@ -211,7 +278,12 @@ int main() {
 
 	int frame = 0;
 	float lastTime = glfwGetTime();
+	float lastFrame = 0.0;// time for the last frame
 	while (!glfwWindowShouldClose(window)) {
+		float currTime = glfwGetTime();
+		deltaTime = currTime - lastTime;
+		lastTime = currTime;
+
 		processInput(window);
 
 		glClearColor(0.0f, 0.027f, 0.212f, 0.1f);
