@@ -10,7 +10,7 @@ private:
 	unsigned int ID;
 public:
 	Texture() {};
-	Texture(std::string path, bool gamma = false);
+	Texture(std::string path, bool gamma = false, bool flip = true);
 
 	void setTextureParams(int wrap_s = GL_REPEAT, int wrap_t = GL_REPEAT, int minFilter = GL_LINEAR_MIPMAP_LINEAR, int magFilter = GL_LINEAR);
 

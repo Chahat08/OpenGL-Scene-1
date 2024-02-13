@@ -3,13 +3,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-Texture::Texture(std::string path, bool gamma) {
+Texture::Texture(std::string path, bool gamma, bool flip) {
 
 	glGenTextures(1, &this->ID);
 
 	int width, height, nrChannels;
 
-	//stbi_set_flip_vertically_on_load(flip);
+	stbi_set_flip_vertically_on_load(flip);
 	unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
 
 	if (data) {
