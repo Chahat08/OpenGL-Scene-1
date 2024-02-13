@@ -8,13 +8,16 @@
 class Texture {
 private:
 	unsigned int ID;
-	std::string imgType;
 public:
-	Texture(std::string path, std::string imgType, bool flip);
+	Texture() {};
+	Texture(std::string path, bool gamma = false);
 
-	void setTextureParams(int wrap_s, int wrap_t, int minFilter, int magFilter);
+	void setTextureParams(int wrap_s = GL_REPEAT, int wrap_t = GL_REPEAT, int minFilter = GL_LINEAR_MIPMAP_LINEAR, int magFilter = GL_LINEAR);
 
 	void setTextureUnit(int unitNumber);
 
 	unsigned int getID();
+
+	std::string type; // img type: specular/diffuse
+	std::string path; // img type: jpg or png, or specular/diffuse
 };

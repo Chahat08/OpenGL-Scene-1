@@ -10,6 +10,7 @@
 #include "VertexData.h"
 #include "Constants.h"
 #include "Camera.h"
+#include "Model.h"
 
 int SCREEN_WIDTH = 800;
 int SCREEN_HEIGHT = 600;
@@ -245,6 +246,7 @@ int main() {
 		positions.push_back(glm::vec3(distribution_xy(engine), distribution_xy(engine), distribution_z(engine)));
 		axes.push_back(glm::vec3(distribution_axes(engine), distribution_axes(engine), distribution_axes(engine)));
 	}
+
 
 	int frame = 0;
 	float lastTime = glfwGetTime();
