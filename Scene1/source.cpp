@@ -7,7 +7,7 @@
 
 #include "Shader.h"
 #include "Texture.h"
-#include "VertexData.h"
+//#include "VertexData.h"
 #include "Constants.h"
 #include "Camera.h"
 #include "Model.h"
@@ -86,7 +86,7 @@ void processInput(GLFWwindow* window) {
 	
 }
 
-void createModelMatrices(Shader& shader, Model& ourModel, std::vector<glm::vec3> positions, std::vector<glm::vec3> axes) {
+void createModelMatrices(Shader& shader, Model& ourModel, std::vector<glm::vec3> positions, std::vector<glm::vec3> axes, std::vector<float>& scales) {
 	/*for (int i = 0; i < NUM_CUBES; ++i) {
 		glm::mat4 model(1.0f);
 		model = glm::translate(model, positions[i]);
@@ -95,28 +95,25 @@ void createModelMatrices(Shader& shader, Model& ourModel, std::vector<glm::vec3>
 		shader.setUniformMatrix4float("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}*/
-	glm::mat4 model = glm::mat4(1.0f);
+	for (int i = 0; i < NUM_CUBES; ++i) {
+		glm::mat4 model = glm::mat4(1.0f);
 
-	model = glm::translate(model, glm::vec3(0.0f, 0.0f, -5.0f)); 
-	model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0));
-	model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));	
+		model = glm::translate(model, positions[i]);
+		model = glm::rotate(model, (float)glfwGetTime(), axes[i]);
+		model = glm::scale(model, glm::vec3(scales[i], scales[i], scales[i]));
 
-	shader.setUniformMatrix4float("model", model);
-	ourModel.Draw(shader);
+		shader.setUniformMatrix4float("model", model);
+		ourModel.Draw(shader);
+	}
 }
 
 void createViewMatrix(Shader& shader, float ipd, bool rightEye = false) {
-	/*const float radius = 10.0f;
-	float camX = sin(glfwGetTime()) * radius;
-	float camZ = cos(glfwGetTime()) * radius;
-	glm::mat4 view(1.0f);
-	view = glm::lookAt(
-		glm::vec3((rightEye ? camX += ipd / 2.0 : camX -= ipd / 2.0), 0.0f, camZ),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f)
-	);*/
+	const float radius = 10.0f;
 
-	glm::mat4 view = camera.GetViewMatrix();
+	camera.position.x += rightEye? ipd / 2.0 : -ipd / 2.0;
+
+	glm::mat4 view(1.0f);
+	view = camera.GetViewMatrix();
 
 	shader.setUniformMatrix4float("view", view);
 }
@@ -134,7 +131,7 @@ void createProjectionMatrix(Shader& shader, float near = 0.1f, float far = 100.0
 	shader.setUniformMatrix4float("projection", projection);
 }
 
-void createAllTransformationsAndEnableQuadBuffer(Shader& shader, Model& ourModel, float ipd, float near, float far, float fovDeg, std::vector<glm::vec3> positions, std::vector<glm::vec3> axes) {
+void createAllTransformationsAndEnableQuadBuffer(Shader& shader, Model& ourModel, float ipd, float near, float far, float fovDeg, std::vector<glm::vec3> positions, std::vector<glm::vec3> axes, std::vector<float>& scales) {
 	createProjectionMatrix(shader, near, far);
 
 	// LEFT EYE
@@ -142,7 +139,7 @@ void createAllTransformationsAndEnableQuadBuffer(Shader& shader, Model& ourModel
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	createViewMatrix(shader, ipd, false);
-	createModelMatrices(shader, ourModel, positions, axes);
+	createModelMatrices(shader, ourModel, positions, axes, scales);
 
 	glFlush();
 
@@ -151,7 +148,7 @@ void createAllTransformationsAndEnableQuadBuffer(Shader& shader, Model& ourModel
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	createViewMatrix(shader, ipd, true);
-	createModelMatrices(shader, ourModel, positions, axes);
+	createModelMatrices(shader, ourModel, positions, axes, scales);
 
 	glFlush();
 }
@@ -206,8 +203,22 @@ int main() {
 	// SHADERS
 	Shader shader("shaders/vertexShaderSource.vert", "shaders/fragmentShaderSource.frag");
 
-	std::vector<glm::vec3> positions, axes;
+	std::random_device rd;
+	std::mt19937 engine(rd());
 
+	std::uniform_real_distribution<> distribution_xy(-5.0, 5.0);
+	std::uniform_real_distribution<> distribution_z(-5.0, 5.0);
+	std::uniform_real_distribution<> distribution_axes(-2, 2);
+	std::uniform_real_distribution<> distribution_s(0.2,0.5);
+
+	std::vector<glm::vec3> positions, axes;
+	std::vector<float> scales;
+
+	for (int i = 0; i < NUM_CUBES; ++i) {
+		positions.push_back(glm::vec3(distribution_xy(engine), distribution_xy(engine), distribution_z(engine)));
+		axes.push_back(glm::vec3(distribution_axes(engine), distribution_axes(engine), distribution_axes(engine)));
+		scales.push_back(distribution_s(engine));
+	}
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -231,10 +242,9 @@ int main() {
 		texture1.setTextureUnit(1);*/
 
 		shader.use();
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_POINTS, 0, 1);
+		//glBindVertexArray(VAO);
 
-		createAllTransformationsAndEnableQuadBuffer(shader, ourModel, IPD, 0.1f, 100.0f, 45.0, positions, axes);
+		createAllTransformationsAndEnableQuadBuffer(shader, ourModel, IPD, 0.1f, 100.0f, 45.0, positions, axes, scales);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
