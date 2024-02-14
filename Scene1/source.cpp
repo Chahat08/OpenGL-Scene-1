@@ -18,16 +18,16 @@ int SCREEN_HEIGHT = 600;
 int CURSOR_XPOS = INT_MIN;
 int CURSOR_YPOS = INT_MIN;
 
-int NUM_CUBES = 16;
+int NUM_CUBES = 10;
 
-const float IPD = 0.5f;
-
+const float IPD = 0.065f;
+glm::vec3 HEAD_POSITION = glm::vec3(0.0, 0.0, -0.75); // let the head be 0.75 m from the screen
 float deltaTime = 1.0f;
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
 
 void framebuffer_resize_callback(GLFWwindow* window, int width, int height) {
-	glViewport(0, 0, width, height);
+	glViewport(0, width/2, width/2, height/2);
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
@@ -57,7 +57,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-	camera.ProcessMouseScroll(static_cast<float>(yoffset));
+	//camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -95,9 +95,11 @@ void createModelMatrices(Shader& shader, Model& ourModel, std::vector<glm::vec3>
 		shader.setUniformMatrix4float("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}*/
+	float radius = 5.0;
 	for (int i = 0; i < NUM_CUBES; ++i) {
 		glm::mat4 model = glm::mat4(1.0f);
 
+		//model = glm::translate(model, glm::vec3(radius+positions[i].x*sin(glfwGetTime()), positions[i].y, radius+positions[i].z*cos(glfwGetTime())));
 		model = glm::translate(model, positions[i]);
 		model = glm::rotate(model, (float)glfwGetTime(), axes[i]);
 		model = glm::scale(model, glm::vec3(scales[i], scales[i], scales[i]));
@@ -118,12 +120,20 @@ void createViewMatrix(Shader& shader, float ipd, bool rightEye = false) {
 	shader.setUniformMatrix4float("view", view);
 }
 
+void createHeadMatrix(Shader& shader, glm::vec3 translation, const float rotationAngle, glm::vec3 rotationAxis) {
+	glm::mat4 head(1.0f);
+
+	head = glm::lookAt(HEAD_POSITION, camera.position, camera.up);
+
+	shader.setUniformMatrix4float("head", head);
+}
+
 void createProjectionMatrix(Shader& shader, float near = 0.1f, float far = 100.0f) {
 	glm::mat4 projection(1.0f);
 
 	projection = glm::perspective(
-		glm::radians(camera.zoom),
-		(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,
+		glm::radians(179.0f), //glm::radians(camera.zoom),
+		(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT/2,
 		0.1f,
 		100.0f
 	);
@@ -139,6 +149,7 @@ void createAllTransformationsAndEnableQuadBuffer(Shader& shader, Model& ourModel
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	createViewMatrix(shader, ipd, false);
+	createHeadMatrix(shader, HEAD_POSITION, 0.0, glm::vec3(0.0, 0.0, 0.0));
 	createModelMatrices(shader, ourModel, positions, axes, scales);
 
 	glFlush();
@@ -148,6 +159,7 @@ void createAllTransformationsAndEnableQuadBuffer(Shader& shader, Model& ourModel
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	createViewMatrix(shader, ipd, true);
+	createHeadMatrix(shader, HEAD_POSITION, 0.0, glm::vec3(0.0, 0.0, 0.0));
 	createModelMatrices(shader, ourModel, positions, axes, scales);
 
 	glFlush();
@@ -194,6 +206,7 @@ int main() {
 	std::cout << "vendor: " << vendor << std::endl;
 	std::cout << "renderer: " << renderer << std::endl;
 
+	glViewport(0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
 	glfwSetFramebufferSizeCallback(window, framebuffer_resize_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
@@ -206,10 +219,10 @@ int main() {
 	std::random_device rd;
 	std::mt19937 engine(rd());
 
-	std::uniform_real_distribution<> distribution_xy(-5.0, 5.0);
-	std::uniform_real_distribution<> distribution_z(-5.0, 5.0);
+	std::uniform_real_distribution<> distribution_xy(-500.0, 500.0);
+	std::uniform_real_distribution<> distribution_z(-1.0, -1.0);
 	std::uniform_real_distribution<> distribution_axes(-2, 2);
-	std::uniform_real_distribution<> distribution_s(0.2,0.5);
+	std::uniform_real_distribution<> distribution_s(1.0,1.0);
 
 	std::vector<glm::vec3> positions, axes;
 	std::vector<float> scales;
@@ -218,6 +231,7 @@ int main() {
 		positions.push_back(glm::vec3(distribution_xy(engine), distribution_xy(engine), distribution_z(engine)));
 		axes.push_back(glm::vec3(distribution_axes(engine), distribution_axes(engine), distribution_axes(engine)));
 		scales.push_back(distribution_s(engine));
+		std::cout << "Positions: " << positions[i].x << " " << positions[i].y << " " << positions[i].z << std::endl;
 	}
 
 	glEnable(GL_DEPTH_TEST);
@@ -228,6 +242,9 @@ int main() {
 	int frame = 0;
 	float lastTime = glfwGetTime();
 	float lastFrame = 0.0;// time for the last frame
+
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	while (!glfwWindowShouldClose(window)) {
 		float currTime = glfwGetTime();
 		deltaTime = currTime - lastTime;
