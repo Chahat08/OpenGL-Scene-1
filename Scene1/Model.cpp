@@ -14,7 +14,8 @@ void Model::loadModel(std::string path) {
 		return;
 	}
 
-	directory = path.substr(0, path.find_last_of('/'));
+	directory = path.substr(0, path.find_last_of('\\'));
+	std::replace(directory.begin(), directory.end(), '\\', '/');
 	processNode(scene->mRootNode, scene);
 }
 
@@ -85,6 +86,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 			aiTextureType_SPECULAR, "texture_specular");
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 	}
+	else std::cout << "no textures" << std::endl;
 
 	return Mesh(vertices, indices, textures);
 }
@@ -107,7 +109,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
 		}
 		if (!skip) {
 			std::string name(str.C_Str());
-			Texture texture(directory + '/' + name);
+			Texture texture(directory + "/" + name);
 			texture.setTextureParams();
 			texture.type = typeName;
 			texture.path = name;

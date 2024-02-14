@@ -7,7 +7,7 @@
 
 class Texture {
 private:
-	unsigned int ID;
+	unsigned int ID = 0;
 public:
 	Texture() {};
 	Texture(std::string path, bool gamma = false, bool flip = true);
