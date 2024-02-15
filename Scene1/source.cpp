@@ -175,11 +175,11 @@ int main() {
 	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-	//SCREEN_WIDTH = mode->width;
-	//SCREEN_HEIGHT = mode->height;
+	SCREEN_WIDTH = mode->width;
+	SCREEN_HEIGHT = mode->height;
 
-	//GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Title", monitor, NULL);
-	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Title", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Title", monitor, NULL);
+	//GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Title", NULL, NULL);
 	if (!window) {
 		std::cerr << "Failed to create GLFW window" << std::endl;
 		return -1;
