@@ -24,6 +24,7 @@ public:
         loadModel(path);
     }
     void Draw(Shader& shader);
+    void deleteMeshes();
 private:
     // model data
     std::vector<Texture> textures_loaded;

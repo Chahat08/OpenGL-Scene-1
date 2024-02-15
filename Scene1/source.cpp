@@ -12,22 +12,23 @@
 #include "Camera.h"
 #include "Model.h"
 
-int SCREEN_WIDTH = 800;
-int SCREEN_HEIGHT = 600;
+int SCREEN_WIDTH = 1000;
+int SCREEN_HEIGHT = 800;
 
 int CURSOR_XPOS = INT_MIN;
 int CURSOR_YPOS = INT_MIN;
 
-int NUM_CUBES = 10;
+int NUM_CUBES = 1;
+bool WIREFRAME = false;
 
 const float IPD = 0.065f;
 glm::vec3 HEAD_POSITION = glm::vec3(0.0, 0.0, -0.75); // let the head be 0.75 m from the screen
 float deltaTime = 1.0f;
 
-Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, -10.0f));
 
 void framebuffer_resize_callback(GLFWwindow* window, int width, int height) {
-	glViewport(0, width/2, width/2, height/2);
+	glViewport(0, 0, width, height);
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
@@ -69,6 +70,10 @@ void processInput(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 	}
+	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+		WIREFRAME = !WIREFRAME;
+		glPolygonMode(GL_FRONT_AND_BACK, WIREFRAME ? GL_LINE : GL_FILL);
+	}
 
 	// camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -86,27 +91,15 @@ void processInput(GLFWwindow* window) {
 	
 }
 
-void createModelMatrices(Shader& shader, Model& ourModel, std::vector<glm::vec3> positions, std::vector<glm::vec3> axes, std::vector<float>& scales) {
-	/*for (int i = 0; i < NUM_CUBES; ++i) {
-		glm::mat4 model(1.0f);
-		model = glm::translate(model, positions[i]);
-		model = glm::rotate(model, (float)glfwGetTime(), axes[i]);
+void createModelMatrices(Shader& shader, Model& ourModel) {
+	glm::mat4 model = glm::mat4(1.0f);
 
-		shader.setUniformMatrix4float("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-	}*/
-	float radius = 5.0;
-	for (int i = 0; i < NUM_CUBES; ++i) {
-		glm::mat4 model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(0.0, 0.0, 0.0));
+	//model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0));
+	model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
 
-		//model = glm::translate(model, glm::vec3(radius+positions[i].x*sin(glfwGetTime()), positions[i].y, radius+positions[i].z*cos(glfwGetTime())));
-		model = glm::translate(model, positions[i]);
-		model = glm::rotate(model, (float)glfwGetTime(), axes[i]);
-		model = glm::scale(model, glm::vec3(scales[i], scales[i], scales[i]));
-
-		shader.setUniformMatrix4float("model", model);
-		ourModel.Draw(shader);
-	}
+	shader.setUniformMatrix4float("model", model);
+	ourModel.Draw(shader);
 }
 
 void createViewMatrix(Shader& shader, float ipd, bool rightEye = false) {
@@ -123,7 +116,7 @@ void createViewMatrix(Shader& shader, float ipd, bool rightEye = false) {
 void createHeadMatrix(Shader& shader, glm::vec3 translation, const float rotationAngle, glm::vec3 rotationAxis) {
 	glm::mat4 head(1.0f);
 
-	head = glm::lookAt(HEAD_POSITION, camera.position, camera.up);
+	//head = glm::lookAt(HEAD_POSITION, camera.position, camera.up);
 
 	shader.setUniformMatrix4float("head", head);
 }
@@ -132,8 +125,8 @@ void createProjectionMatrix(Shader& shader, float near = 0.1f, float far = 100.0
 	glm::mat4 projection(1.0f);
 
 	projection = glm::perspective(
-		glm::radians(179.0f), //glm::radians(camera.zoom),
-		(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT/2,
+		glm::radians(45.0f), 
+		(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,
 		0.1f,
 		100.0f
 	);
@@ -141,7 +134,7 @@ void createProjectionMatrix(Shader& shader, float near = 0.1f, float far = 100.0
 	shader.setUniformMatrix4float("projection", projection);
 }
 
-void createAllTransformationsAndEnableQuadBuffer(Shader& shader, Model& ourModel, float ipd, float near, float far, float fovDeg, std::vector<glm::vec3> positions, std::vector<glm::vec3> axes, std::vector<float>& scales) {
+void createAllTransformationsAndEnableQuadBuffer(Shader& shader, Model& ourModel, float ipd, float near, float far, float fovDeg) {
 	createProjectionMatrix(shader, near, far);
 
 	// LEFT EYE
@@ -150,7 +143,7 @@ void createAllTransformationsAndEnableQuadBuffer(Shader& shader, Model& ourModel
 
 	createViewMatrix(shader, ipd, false);
 	createHeadMatrix(shader, HEAD_POSITION, 0.0, glm::vec3(0.0, 0.0, 0.0));
-	createModelMatrices(shader, ourModel, positions, axes, scales);
+	createModelMatrices(shader, ourModel);
 
 	glFlush();
 
@@ -160,7 +153,7 @@ void createAllTransformationsAndEnableQuadBuffer(Shader& shader, Model& ourModel
 
 	createViewMatrix(shader, ipd, true);
 	createHeadMatrix(shader, HEAD_POSITION, 0.0, glm::vec3(0.0, 0.0, 0.0));
-	createModelMatrices(shader, ourModel, positions, axes, scales);
+	createModelMatrices(shader, ourModel);
 
 	glFlush();
 }
@@ -177,23 +170,23 @@ int main() {
 
 	//glfwWindowHint(GLFW_DECORATED, NULL); // to remove border and titlebar
 
-	//glfwWindowHint(GLFW_STEREO, GLFW_TRUE);
+	glfwWindowHint(GLFW_STEREO, GLFW_TRUE);
 
 	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-	SCREEN_WIDTH = mode->width;
-	SCREEN_HEIGHT = mode->height;
+	//SCREEN_WIDTH = mode->width;
+	//SCREEN_HEIGHT = mode->height;
 
-	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Title", monitor, NULL);
-	//GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Title", NULL, NULL);
+	//GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Title", monitor, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Title", NULL, NULL);
 	if (!window) {
 		std::cerr << "Failed to create GLFW window" << std::endl;
 		return -1;
 	}
 
 	glfwMakeContextCurrent(window);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); // hide the cursor
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); // hide the cursor
 
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -206,7 +199,6 @@ int main() {
 	std::cout << "vendor: " << vendor << std::endl;
 	std::cout << "renderer: " << renderer << std::endl;
 
-	glViewport(0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
 	glfwSetFramebufferSizeCallback(window, framebuffer_resize_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
@@ -216,34 +208,17 @@ int main() {
 	// SHADERS
 	Shader shader("shaders/vertexShaderSource.vert", "shaders/fragmentShaderSource.frag");
 
-	std::random_device rd;
-	std::mt19937 engine(rd());
-
-	std::uniform_real_distribution<> distribution_xy(-500.0, 500.0);
-	std::uniform_real_distribution<> distribution_z(-1.0, -1.0);
-	std::uniform_real_distribution<> distribution_axes(-2, 2);
-	std::uniform_real_distribution<> distribution_s(1.0,1.0);
-
-	std::vector<glm::vec3> positions, axes;
-	std::vector<float> scales;
-
-	for (int i = 0; i < NUM_CUBES; ++i) {
-		positions.push_back(glm::vec3(distribution_xy(engine), distribution_xy(engine), distribution_z(engine)));
-		axes.push_back(glm::vec3(distribution_axes(engine), distribution_axes(engine), distribution_axes(engine)));
-		scales.push_back(distribution_s(engine));
-		std::cout << "Positions: " << positions[i].x << " " << positions[i].y << " " << positions[i].z << std::endl;
-	}
 
 	glEnable(GL_DEPTH_TEST);
 
-	char objPath[] = "objects\\planet\\planet.obj";
+	char objPath[] = "objects\\protein\\protein.obj";
+	//char objPath[] = "objects\\planet\\planet.obj";
 	Model ourModel(objPath);
 
 	int frame = 0;
 	float lastTime = glfwGetTime();
 	float lastFrame = 0.0;// time for the last frame
 
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	while (!glfwWindowShouldClose(window)) {
 		float currTime = glfwGetTime();
@@ -252,16 +227,13 @@ int main() {
 
 		processInput(window);
 
-		glClearColor(0.0f, 0.0f, 0.1f, 0.1f);
+		glClearColor(0.851f, 0.631f, 0.835f, 0.1f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		/*texture0.setTextureUnit(0);
-		texture1.setTextureUnit(1);*/
 
 		shader.use();
 		//glBindVertexArray(VAO);
 
-		createAllTransformationsAndEnableQuadBuffer(shader, ourModel, IPD, 0.1f, 100.0f, 45.0, positions, axes, scales);
+		createAllTransformationsAndEnableQuadBuffer(shader, ourModel, IPD, 0.1f, 100.0f, 45.0);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -273,6 +245,9 @@ int main() {
 			lastTime += 1.0;
 		}
 	}
+
+	ourModel.deleteMeshes();
+	shader.del();
 
 	glfwTerminate();
 
