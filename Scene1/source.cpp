@@ -219,6 +219,19 @@ int main() {
 	float lastTime = glfwGetTime();
 	float lastFrame = 0.0;// time for the last frame
 
+	shader.use();
+
+	glm::vec3 lightAmbient(1.0, 1.0, 1.0);
+	glm::vec3 lightDiffuse(1.0, 1.0, 1.0);
+	glm::vec3 lightSpecular(1.0, 1.0, 1.0);
+	glm::vec3 lightPosition(10.0, 10.0, 10.0);
+
+	shader.setUniformVec3float("light.ambient", lightAmbient);
+	shader.setUniformVec3float("light.diffuse", lightDiffuse);
+	shader.setUniformVec3float("light.specular", lightSpecular);
+
+	shader.setUniformVec3float("light.position", lightPosition);
+
 
 	while (!glfwWindowShouldClose(window)) {
 		float currTime = glfwGetTime();
@@ -227,12 +240,11 @@ int main() {
 
 		processInput(window);
 
-		glClearColor(0.851f, 0.631f, 0.835f, 0.1f);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.1f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader.use();
-		//glBindVertexArray(VAO);
-
+		shader.setUniformVec3float("cameraPos", camera.position);
 		createAllTransformationsAndEnableQuadBuffer(shader, ourModel, IPD, 0.1f, 100.0f, 45.0);
 
 		glfwSwapBuffers(window);

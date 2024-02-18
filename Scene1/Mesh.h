@@ -9,19 +9,15 @@
 
 #include "Texture.h"
 #include "Shader.h"
+#include "Material.h"
 
 class Vertex {
 public:
 	glm::vec3 position;
 	glm::vec3 normal;
 	glm::vec2 texCoords;
+	//glm::vec3 color;
 };
-
-//class Texture2 {
-//public:
-//	unsigned int id;
-//	std::string type; // specular/diffused etc.
-//};
 
 class Mesh {
 private:
@@ -32,8 +28,9 @@ public:
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 	std::vector<Texture> textures;
+	Material material;
 
-	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, Material material);
 	void draw(Shader& shader);
 	void deallocateBuffers();
 };

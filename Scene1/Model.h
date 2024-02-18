@@ -13,6 +13,7 @@
 #include <map>
 
 #include "Mesh.h"
+#include "Material.h"
 #include "Shader.h"
 #include "stb_image.h"
 

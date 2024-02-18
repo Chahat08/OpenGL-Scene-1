@@ -1,9 +1,10 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures) {
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, Material material) {
 	this->vertices = vertices;
 	this->indices = indices;
 	this->textures = textures;
+    this->material = material;
 
 	setupMesh();
 }
@@ -38,6 +39,13 @@ void Mesh::setupMesh() {
 void Mesh::draw(Shader& shader) {
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
+
+    // set material in shader;
+    shader.setUniformVec3float("material.ambient", material.ambient);
+    shader.setUniformVec3float("material.diffuse", material.diffuse);
+    shader.setUniformVec3float("material.specular", material.specular);
+    shader.setFloatUniform("material.shininess", material.shininess);
+
     for (unsigned int i = 0; i < textures.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i); // activate proper texture unit before binding

@@ -128,10 +128,18 @@ void Shader::setFloatUniform(const std::string& name, float value) const {
 	glUniform1f(uniformLocation, value);
 }
 
-void Shader::setUniformMatrix4float(const std::string& name, glm::mat4& transform) {
+void Shader::setUniformMatrix4float(const std::string& name, glm::mat4& transform) const {
 	unsigned int transformLoc = glGetUniformLocation(this->ID, name.c_str());
 	if (transformLoc == -1) {
 		std::cerr << "Uniform matrix 4f " << name << " not found" << std::endl;
 	}
 	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+}
+
+void Shader::setUniformVec3float(const std::string& name, glm::vec3& vec) const {
+	unsigned int loc = glGetUniformLocation(this->ID, name.c_str());
+	if (loc == -1) {
+		std::cerr << "Uniform vec 3f " << name << " not found" << std::endl;
+	}
+	glUniform3f(loc, vec.x, vec.y, vec.z);
 }

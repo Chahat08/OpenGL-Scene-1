@@ -42,6 +42,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 	std::vector<Texture> textures;
+	Material meshMaterial;
 
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 	{
@@ -84,6 +85,19 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 	if (mesh->mMaterialIndex >= 0)
 	{
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+
+		aiColor3D colorAmbient, colorDiffuse, colorSpecular;
+		float shininess;
+		material->Get(AI_MATKEY_COLOR_AMBIENT, colorAmbient);
+		material->Get(AI_MATKEY_COLOR_DIFFUSE, colorDiffuse);
+		material->Get(AI_MATKEY_COLOR_SPECULAR, colorSpecular);
+		material->Get(AI_MATKEY_SHININESS, shininess);
+
+		meshMaterial.ambient = glm::vec3(colorAmbient.r, colorAmbient.b, colorAmbient.g);
+		meshMaterial.diffuse = glm::vec3(colorDiffuse.r, colorDiffuse.b, colorDiffuse.g);
+		meshMaterial.specular = glm::vec3(colorSpecular.r, colorSpecular.b, colorSpecular.g);
+		meshMaterial.shininess = shininess;
+		
 		std::vector<Texture> diffuseMaps = loadMaterialTextures(material,
 			aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
@@ -93,7 +107,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 	}
 	else std::cout << "no textures" << std::endl;
 
-	return Mesh(vertices, indices, textures);
+	return Mesh(vertices, indices, textures, meshMaterial);
 }
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
